@@ -1,3 +1,5 @@
 selenium
 pandas
 beautifulsoup4
+tqdm
+colorama
