@@ -10,7 +10,28 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from tqdm import tqdm
-from colorama import init, Fore, Style
+from colorama import init, Fore
+
+# ASCII art of a boat
+boat_ascii = (
+    r"""
+                  ~.
+           Ya...___|__..aab     .   .
+            Y88a  Y88o  Y88a   (     )
+             Y88b  Y88b  Y88b   `.oo'
+             :888  :888  :888  ( (`-'
+    .---.    d88P  d88P  d88P   `.`.
+   / .-._)  d8P'"""
+    + r"""'-Y8P      `.`.
+  ( (`._) .-.  .-. |.-.  .-.  .-.   ) )
+   \ `---( O )( O )( O )( O )( O )-' /
+    `.    `-'  `-'  `-'  `-'  `-'  .' CJ
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""
+)
+
+# Print the ASCII art
+print(Fore.CYAN + boat_ascii)
 
 init(autoreset=True)
 
@@ -44,7 +65,7 @@ try:
                     )
                 )
                 ActionChains(driver).move_to_element(button).click(button).perform()
-                time.sleep(0.5)  # Reduced sleep time
+                time.sleep(0.75)
 
                 soup = BeautifulSoup(driver.page_source, "html.parser")
                 model_list = soup.find("div", class_="list-model")
