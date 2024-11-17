@@ -17,7 +17,7 @@ init(autoreset=True)
 csv_file_path = "boat_models.csv"
 if os.path.exists(csv_file_path):
     os.remove(csv_file_path)
-    print(Fore.YELLOW + f"{csv_file_path} har raderats.")
+    print(Fore.RED + f"{csv_file_path} har raderats.")
 
 options = Options()
 options.add_argument("--headless")
@@ -30,16 +30,12 @@ driver.get(url)
 boat_models = []
 seen_models = set()
 
-print(Fore.CYAN + Style.BRIGHT + "Startar insamling av båtmodeller från webbplatsen.")
-
 soup = BeautifulSoup(driver.page_source, "html.parser")
 total_count_element = soup.find("span", attrs={"data-bind": "text: count"})
 total_count = int(total_count_element.text.strip()) if total_count_element else 0
 
 try:
-    with tqdm(
-        total=total_count, desc="Hämtar båtmodeller", unit="modell", colour="BLUE"
-    ) as pbar:
+    with tqdm(total=total_count, desc="Hämtar båtmodeller", unit="modell") as pbar:
         while True:
             try:
                 button = WebDriverWait(driver, 10).until(
@@ -48,7 +44,7 @@ try:
                     )
                 )
                 ActionChains(driver).move_to_element(button).click(button).perform()
-                time.sleep(2)
+                time.sleep(0.5)  # Reduced sleep time
 
                 soup = BeautifulSoup(driver.page_source, "html.parser")
                 model_list = soup.find("div", class_="list-model")
@@ -83,56 +79,41 @@ try:
                                 }
                             )
 
-                    boat_models.extend(new_models)
-                    pbar.update(len(new_models))
+                    if new_models:
+                        boat_models.extend(new_models)
+                        pbar.update(len(new_models))
 
-                    try:
-                        existing_df = pd.read_csv("boat_models.csv")
-                        new_df = pd.DataFrame(new_models)
-                        combined_df = (
-                            pd.concat([existing_df, new_df])
-                            .drop_duplicates()
-                            .reset_index(drop=True)
+                        df = pd.DataFrame(new_models)
+                        if os.path.exists(csv_file_path):
+                            df.to_csv(
+                                csv_file_path,
+                                mode="a",
+                                header=False,
+                                index=False,
+                                encoding="utf-8",
+                            )
+                        else:
+                            df.to_csv(csv_file_path, index=False, encoding="utf-8")
+
+                    if not new_models:
+                        print(
+                            Fore.GREEN
+                            + "Inga fler modeller att ladda. Vi är klara här."
                         )
-                    except FileNotFoundError:
-                        combined_df = pd.DataFrame(new_models)
-
-                    combined_df.to_csv("boat_models.csv", index=False, encoding="utf-8")
-
-                    time.sleep(2)
-                else:
-                    print(
-                        Fore.GREEN
-                        + Style.BRIGHT
-                        + "Inga fler modeller att ladda. Vi är klara här."
-                    )
-                    break
+                        break
             except Exception as e:
-                print(Fore.RED + Style.BRIGHT + f"Ett fel inträffade: {e}")
+                print(Fore.RED + f"Ett fel inträffade: {e}")
                 break
 
 finally:
     driver.quit()
-    print(Fore.CYAN + Style.BRIGHT + "Webbläsaren stängdes.")
+    print(Fore.CYAN + "Webbläsaren stängdes.")
 
-df = pd.DataFrame(boat_models)
-df.to_csv("boat_models.csv", index=False, encoding="utf-8")
-print(
-    Fore.CYAN
-    + Style.BRIGHT
-    + "Data har sparats till 'boat_models.csv'. Totalt antal modeller:",
-    len(boat_models),
-)
-
-
-def remove_duplicates_from_csv(file_path):
-    try:
-        df = pd.read_csv(file_path)
-        df.drop_duplicates(inplace=True)
-        df.to_csv(file_path, index=False, encoding="utf-8")
-        print(Fore.GREEN + Style.BRIGHT + "Dubbletter har raderats från CSV-filen.")
-    except FileNotFoundError:
-        print(Fore.RED + Style.BRIGHT + "CSV-filen hittades inte.")
-
-
-remove_duplicates_from_csv("boat_models.csv")
+if os.path.exists(csv_file_path):
+    df = pd.read_csv(csv_file_path)
+    df.drop_duplicates(inplace=True)
+    df.to_csv(csv_file_path, index=False, encoding="utf-8")
+    print(
+        Fore.CYAN
+        + f"Data har sparats till 'boat_models.csv'. Totalt antal modeller: {len(df)}"
+    )
